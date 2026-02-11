@@ -1,0 +1,546 @@
+manifest:
+  version: "0.1.3"
+  schema: https://a2as.org/cert/schema
+  subject:
+    name: many871027/google-adk-sales-agent-to-whatsapp-
+    source: https://github.com/many871027/google-adk-sales-agent-to-whatsapp-
+    branch: main
+    commit: "ded5acba"
+    scope: [backend/agents/sales_agent.py, backend/main.py, backend/agents/tools/product_tools.py, backend/agents/agent_handler.py,
+      backend/agents/tools/cart_tools.py, backend/config.py]
+  issued:
+    by: A2AS.org
+    at: '2026-02-11T16:57:04Z'
+    url: https://a2as.org/certified/agents/many871027/google-adk-sales-agent-to-whatsapp-
+  signatures:
+    digest: sha256:TpdCVgmoQZYqHy7uRV715iPyAguQQATKbLxoeL301YA
+    key: ed25519:UgSB5ljsm5qyOl_HQJbJhHdu-cNZaqk_gos4-nFbCjU
+    sig: ed25519:iMudsDOyFpXarpe2jn8z59RDKadol2hrFkvVzFQEgJ6JSKlM71jMFKBPHelkk07xtCwlx91o6Omm7ipCgFlYDg
+
+agents:
+  request_agent:
+    type: instance
+    models: [gemini-2.5-flash-lite]
+    tools: [buscar_producto_wrapper, agregar_al_carrito_wrapper, ver_carrito_wrapper, remover_del_carrito_wrapper, modificar_cantidad_wrapper]
+    params:
+      name: agent_for_{business.id}
+      instruction: final_instruction
+      before_agent_callback: before_agent_prod
+      after_agent_callback: after_agent_prod
+      before_model_callback: before_model_prod
+      after_model_callback: after_model_prod
+      before_tool_callback: before_tool_prod
+      after_tool_callback: after_tool_prod
+      function: process_customer_message
+  root_agent:
+    type: instance
+    models: [gemini-2.5-flash-lite]
+    tools: [buscar_producto, agregar_al_carrito, ver_carrito]
+    params:
+      name: sales_agent_template
+      description: Agente de ventas base para la plataforma WHSP-AI.
+      instruction: [Eres un asistente de ventas conversacional.]
+
+models:
+  gemini-2.5-flash-lite:
+    type: literal
+    agents: [root_agent, request_agent]
+
+tools:
+  agregar_al_carrito:
+    type: function
+    agents: [root_agent]
+    params:
+      description: |-
+        Agrega una cantidad específica de un producto al carrito de compras
+        (orden pendiente) del cliente para un negocio específico.
+  agregar_al_carrito_wrapper:
+    type: function
+    agents: [request_agent]
+    params:
+      description: |-
+        Wrapper simple para agregar un producto al carrito.
+        Args:
+            nombre_producto: Nombre del producto a agregar.
+            cantidad: Cantidad a agregar (puede ser float).
+        Returns:
+            Diccionario con el resultado de la operación.
+  buscar_producto:
+    type: function
+    agents: [root_agent]
+    params:
+      description: Busca un producto en la base de datos combinando búsqueda exacta y flexible.
+  buscar_producto_wrapper:
+    type: function
+    agents: [request_agent]
+    params:
+      description: |-
+        Busca un producto y maneja el caso 'unconfirmed' para Human-in-the-Loop.
+        Args:
+            nombre_producto: El nombre o descripción parcial del producto.
+        Returns:
+            Diccionario con el resultado de la búsqueda.
+  modificar_cantidad_wrapper:
+    type: function
+    agents: [request_agent]
+    params:
+      description: |-
+        Wrapper simple para modificar la cantidad de un producto en el carrito.
+        Args:
+            nombre_producto: Nombre del producto a modificar.
+            nueva_cantidad: La nueva cantidad deseada (puede ser 0 para eliminar).
+        Returns:
+            Diccionario con el resultado de la operación.
+  remover_del_carrito_wrapper:
+    type: function
+    agents: [request_agent]
+    params:
+      description: |-
+        Wrapper simple para eliminar un producto del carrito.
+        Args:
+            nombre_producto: Nombre del producto a eliminar.
+        Returns:
+            Diccionario con el resultado de la operación.
+  ver_carrito:
+    type: function
+    agents: [root_agent]
+    params:
+      description: Muestra el contenido actual del carrito de compras (orden pendiente) del cliente.
+  ver_carrito_wrapper:
+    type: function
+    agents: [request_agent]
+    params:
+      description: |-
+        Wrapper simple para mostrar el contenido del carrito.
+        Returns:
+            Diccionario con el contenido del carrito o estado vacío/error.
+
+imports:
+  Agent: google.adk.agents.Agent
+  agregar_al_carrito: tools.cart_tools.agregar_al_carrito
+  agregar_al_carrito_impl: agents.tools.cart_tools.agregar_al_carrito
+  Annotated: typing.Annotated
+  Any: typing.Any
+  APIRouter: fastapi.APIRouter
+  asynccontextmanager: contextlib.asynccontextmanager
+  AsyncGenerator: typing.AsyncGenerator
+  asyncio: asyncio
+  AsyncSession: sqlalchemy.ext.asyncio.AsyncSession
+  AsyncSessionLocal: database.AsyncSessionLocal
+  BackgroundTasks: fastapi.BackgroundTasks
+  BaseModel: pydantic.BaseModel
+  BaseTool: google.adk.tools.base_tool.BaseTool
+  buscar_producto: agents.tools.product_tools.buscar_producto
+  buscar_producto_impl: agents.tools.product_tools.buscar_producto
+  CallbackContext: google.adk.agents.callback_context.CallbackContext
+  CryptContext: passlib.context.CryptContext
+  csv: csv
+  DatabaseBase: database.Base
+  datetime: datetime.datetime
+  deepcopy: copy.deepcopy
+  delete: sqlalchemy.delete
+  Depends: fastapi.Depends
+  Dict: typing.Dict
+  engine: database.engine
+  FastAPI: fastapi.FastAPI
+  File: fastapi.File
+  Form: fastapi.Form
+  func: sqlalchemy.func
+  generate_prompt_for_business: agents.prompt_generator.generate_prompt_for_business
+  get_close_matches: difflib.get_close_matches
+  get_db: database.get_db
+  get_decrypted_api_token: secure_retriever.get_decrypted_api_token
+  hashlib: hashlib
+  Header: fastapi.Header
+  hmac: hmac
+  HTTPException: fastapi.HTTPException
+  InMemorySessionService: google.adk.sessions.InMemorySessionService
+  IntegrityError: sqlalchemy.exc.IntegrityError
+  io: io
+  json: json
+  jwt: jose.jwt
+  JWTError: jose.JWTError
+  List: typing.List
+  Literal: typing.Literal
+  LlmRequest: google.adk.models.LlmRequest
+  LlmResponse: google.adk.models.LlmResponse
+  logging: logging
+  models: models
+  modificar_cantidad_impl: agents.tools.cart_tools.modificar_cantidad
+  OAuth2PasswordBearer: fastapi.security.OAuth2PasswordBearer
+  OAuth2PasswordRequestForm: fastapi.security.OAuth2PasswordRequestForm
+  Optional: typing.Optional
+  os: os
+  process_customer_message: agents.agent_handler.process_customer_message
+  Query: fastapi.Query
+  random: random
+  remover_del_carrito_impl: agents.tools.cart_tools.remover_del_carrito
+  Request: fastapi.Request
+  Response: fastapi.Response
+  root_agent: agents.sales_agent.root_agent
+  Runner: google.adk.runners.Runner
+  schemas: schemas
+  secrets: secrets
+  select: sqlalchemy.select
+  selectinload: sqlalchemy.orm.selectinload
+  send_whatsapp_message: whatsapp_client.send_whatsapp_message
+  shutil: shutil
+  status: fastapi.status
+  time: time
+  timedelta: datetime.timedelta
+  timezone: datetime.timezone
+  ToolContext: google.adk.tools.tool_context.ToolContext
+  traceback: traceback
+  types: google.genai.types
+  UploadFile: fastapi.UploadFile
+  ver_carrito: tools.cart_tools.ver_carrito
+  ver_carrito_impl: agents.tools.cart_tools.ver_carrito
+
+functions:
+  __init__:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, max_retries, base_delay, max_delay]
+  _generate_key:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, tool_name, args]
+    params:
+      returns: str
+  _get_or_create_pending_order_and_customer:
+    type: async
+    module: backend.agents.tools.cart_tools
+    args: [business_id, customer_phone, db]
+    params:
+      returns: models.Order
+  _log:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, event_type, data, level]
+  after_agent_prod:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [callback_context]
+    params:
+      returns: Optional[types.Content]
+  after_model_prod:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [callback_context, llm_response]
+    params:
+      returns: Optional[LlmResponse]
+  after_tool_prod:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [tool, args, tool_context, tool_response]
+    params:
+      returns: Optional[Dict]
+  agregar_al_carrito:
+    type: async
+    module: backend.agents.tools.cart_tools
+    args: [nombre_producto, cantidad, business_id, customer_phone, db]
+    params:
+      returns: dict
+  agregar_al_carrito_wrapper:
+    type: async
+    module: backend.agents.agent_handler
+    args: [nombre_producto, cantidad]
+    params:
+      returns: dict
+  before_agent_prod:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [callback_context]
+    params:
+      returns: Optional[types.Content]
+  before_model_prod:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [callback_context, llm_request]
+    params:
+      returns: Optional[LlmResponse]
+  before_tool_prod:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [tool, args, tool_context]
+    params:
+      returns: Optional[Dict]
+  buscar_producto:
+    type: async
+    module: backend.agents.tools.product_tools
+    args: [nombre_producto, business_id, db]
+    params:
+      returns: dict
+  buscar_producto_wrapper:
+    type: async
+    module: backend.agents.agent_handler
+    args: [nombre_producto]
+    params:
+      returns: dict
+  create_access_token:
+    type: sync
+    module: backend.main
+    args: [data, expires_delta]
+  create_business_for_user:
+    type: async
+    module: backend.main
+    args: [business_in, current_user, db]
+  create_subscription_payment:
+    type: async
+    module: backend.main
+    args: [payment_in, current_user, db]
+  create_user_billing_profile:
+    type: async
+    module: backend.main
+    args: [billing_in, current_user, db]
+  end_timing:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, operation_key]
+    params:
+      returns: float
+  ensure_session:
+    type: async
+    module: backend.agents.agent_handler
+    args: [session_service, app_name, user_id, session_id]
+  get:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, tool_name, args]
+    params:
+      returns: Optional[dict]
+  get_all_product_names:
+    type: async
+    module: backend.agents.tools.product_tools
+    args: [db, business_id]
+    params:
+      returns: list[str]
+  get_business_products:
+    type: async
+    module: backend.main
+    args: [business_id, skip, limit, db]
+  get_current_user_dependency:
+    type: async
+    module: backend.main
+    args: [token, db]
+    params:
+      returns: models.User
+  get_db:
+    type: async
+    module: backend.main
+    params:
+      returns: AsyncGenerator
+  get_delay:
+    type: async
+    module: backend.agents.agent_handler
+    args: [self, tool_name, args]
+    params:
+      returns: float
+  get_metrics:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self]
+    params:
+      returns: Dict
+  get_password_hash:
+    type: sync
+    module: backend.main
+    args: [password]
+  get_stats:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self]
+    params:
+      returns: dict
+  get_user_billing_profile:
+    type: async
+    module: backend.main
+    args: [current_user, db]
+  get_user_payments:
+    type: async
+    module: backend.main
+    args: [current_user, skip, limit, db]
+  handle_inventory_response:
+    type: async
+    module: backend.main
+    args: [payload, db]
+  increment_retry:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, tool_name, args]
+  lifespan:
+    type: async
+    module: backend.main
+    args: [app]
+    params:
+      returns: AsyncGenerator
+  log_agent_end:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, context]
+  log_agent_start:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, context]
+  log_cache_hit:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, tool_name, args, tool_context]
+  log_llm_request:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, context, llm_request]
+  log_llm_response:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, context, llm_response]
+  log_tool_end:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, tool, args, tool_context, tool_response]
+  log_tool_start:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, tool, args, tool_context]
+  login_for_access_token:
+    type: async
+    module: backend.main
+    args: [form_data, db]
+  modificar_cantidad:
+    type: async
+    module: backend.agents.tools.cart_tools
+    args: [nombre_producto, nueva_cantidad, business_id, customer_phone, db]
+    params:
+      returns: dict
+  modificar_cantidad_wrapper:
+    type: async
+    module: backend.agents.agent_handler
+    args: [nombre_producto, nueva_cantidad]
+    params:
+      returns: dict
+  patch_payment_record:
+    type: async
+    module: backend.main
+    args: [payment_id, payment_in, current_user, db]
+  patch_user_billing_profile:
+    type: async
+    module: backend.main
+    args: [billing_in, current_user, db]
+  process_customer_message:
+    type: async
+    module: backend.agents.agent_handler
+    args: [user_message, customer_phone, business, db, runner, session_service]
+    params:
+      returns: str
+  process_inventory_file:
+    type: async
+    module: backend.main
+    args: [inventory_content, business_id]
+  read_root:
+    type: async
+    module: backend.main
+  read_users_me:
+    type: async
+    module: backend.main
+    args: [current_user]
+  receive_whatsapp_message:
+    type: async
+    module: backend.main
+    args: [request, db]
+  register_user:
+    type: async
+    module: backend.main
+    args: [user_in, db]
+  remover_del_carrito:
+    type: async
+    module: backend.agents.tools.cart_tools
+    args: [nombre_producto, business_id, customer_phone, db]
+    params:
+      returns: dict
+  remover_del_carrito_wrapper:
+    type: async
+    module: backend.agents.agent_handler
+    args: [nombre_producto]
+    params:
+      returns: dict
+  reset_retry:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, tool_name, args]
+  set:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, tool_name, args, value, ttl]
+  should_retry:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, tool_name, args, error_message]
+    params:
+      returns: bool
+  start_timing:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, operation_key]
+  update_metric:
+    type: sync
+    module: backend.agents.agent_handler
+    args: [self, metric_name, value]
+  upload_inventory_csv:
+    type: async
+    module: backend.main
+    args: [business_id, background_tasks, current_user, inventory_file, db]
+  validate_whatsapp_signature:
+    type: async
+    module: backend.main
+    args: [request, x_hub_signature_256]
+  ver_carrito:
+    type: async
+    module: backend.agents.tools.cart_tools
+    args: [business_id, customer_phone, db]
+    params:
+      returns: dict
+  ver_carrito_wrapper:
+    type: async
+    module: backend.agents.agent_handler
+    params:
+      returns: dict
+  verify_password:
+    type: sync
+    module: backend.main
+    args: [plain_password, hashed_password]
+  verify_webhook:
+    type: async
+    module: backend.main
+    args: [request]
+
+variables:
+  GEMINI_MODEL:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [backend.config]
+  SECRET_KEY:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [backend.main]
+  VERTEX_LOCATION:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [backend.config]
+  VERTEX_PROJECT_ID:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [backend.config]
+  WHATSAPP_APP_SECRET:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [backend.main]
+  WHATSAPP_VERIFY_TOKEN:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [backend.main]
